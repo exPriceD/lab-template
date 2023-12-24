@@ -222,6 +222,13 @@ class Items(db.Model):
 
 Откроем файл views.py и создадим наш первый эндпоинт. Суть будет примерно той же, как и в файле ``test.py`` вы пробовали создать эндпоинт ``hello_world``
 
+Импортируем требущиеся пакеты:
+```python
+from flask import render_template, Response
+from config import application, db
+from models import Items
+import json
+```
 Первый эндпоинт будет отвечать за отображение главной страницы, которая находится в файле ``index.html``. Путь будет таким: ``/`` или же ```http://127.0.0.1:5000```
 
 ```python
@@ -253,28 +260,228 @@ def get_items():
 
 Данный маршрут принимает только GET запросы, для этого мы явно указали ``methods=["GET"]`` в автрибутах декоратора.
 
-Пропишем основную логику:
+Пропишите основную логику:
 ```python
-items = Items.query.all()
-response = {"status": 200, "items": []}
-for item in items:
-    item_data = {
-        "id": item.id,
-        "name": item.name,
-        "price": item.price,
-        "discount": item.discount,
-        "discount_value": item.discount_value,
-        "image": item.image
-    }
-    response["items"].append(item_data)
-return Response(
-    response=json.dumps(response, ensure_ascii=False),
-    status=200,
-    mimetype="application/json",
-)
+@application.route('/api/items', methods=["GET"])
+def get_items():
+    try:
+        # PUT YOUR CODE HERE
+    except Exception as E:
+        print(E)
+        response = {"status": 500, "text": "Unexpected error"}
+        return Response(
+            response=json.dumps(response, ensure_ascii=False),
+            status=500,
+            mimetype="application/json",
+        )
 ```
+Чтобы получить все записи из таблицы используйте ``items = Items.query.all()``. В ``items`` будет находится список из записей таблицы (одна запись = одна строка таблицы). Вы можете пройти по всем записям через цикл ``for item in items``, теперь вы можете обращаться к значениям полей через точку, например ``item.id``, что выведет id записи
+
+В рузельтате у вас должен получиться словарь со данной структурой:
+```json
+{
+  "status": 200,
+  "items": [
+    {
+      "name": ...,
+      "price": ...,
+      "discount": ...,
+      "discount_value": ...,
+      "image": ...
+    },
+    {
+      "name": ...,
+      "price": ...,
+      "discount": ...,
+      "discount_value": ...,
+      "image": ...
+    },
+    ...
+  ]
+}
+```
+
+После создания словаря, нужно вернуть ответ со статусом 200, если все хорошо, а также сам словарь в формате JSON. Для этого можно использовать ``Response``. Реализуйте это, пользуясь примером из блока try-except выше.
+
+Теперь открем файл ``app.py``. В нашем проекте он будет предназначен для запуска программы, вставим в негой следующий код:
+
+```python
+from config import application, db
+import views
+
+if __name__ == '__main__':
+    application.run(debug=True)
+    with application.app_context():
+        db.create_all()
+```
+
+Мы импортировали все маршруты из файла ``views.py``, а также само приложение и базу данных. По анологии с самым первым примером запускаем приложение через ``application.run(debug=True)``, но при этом мы добавили 2 строчки, которые отвечают за создание базы данных, если она отсуствует.
+
+## Связь сервеной и клиентской части приложения
+
+Страница есть, данные из бд получаем, а как же их вывести? Для этого мы будем использовть JavaScript!!! Мы бы могли использовать уже встроенный во Flask модуль ``Jinja2`` и передавать данные прям в html шаблон, однако сайты начинают использовать REST и RESTful API. 
+REST API популярны из-за простоты, масштабируемости, универсальности, разделения клиента и сервера, поддержки HTTP, гибкости и безопасности. 
+
+JavaScript (JS) - это высокоуровневый, интерпретируемый язык программирования, который применяется в первую очередь для создания веб-страниц с интерактивным поведением. Он является одним из основных технологических компонентов для разработки веб-приложений.
+
+Создадим файл ``static/js/script.js`` и откроем его.
+
+Вспомним, что мы создавали маршрут ``/api/items``, который вернет нам json со списком товаров после GET запроса. 
+
+Как же нам получить этот самый json? Для этого мы будем использовать функцию ``fetch``,  она используется для отправки сетевых запросов.
+
+Добавим в файл ``script.js`` данный код:
+```javascript
+window.onload = async function getItems() {
+    const response = await fetch(URL);
+    if (response.ok) {
+        const json = await response.json();
+        const items = json.items;
+        displayItems(items);
+    }
+}
+```
+Вместо URL добавьте путь к эндпоинту, который возвращает json с товарами.
+
+Попробуем разобраться, что он делает
+
+- ``window.onload = `` - это событие, которое происходит, когда вся страница полностью загружена
+- ``async function getItems() {...}`` - здесь мы объявили асинхронную функцию ``getItems()``
+- ``const response = await fetch("http://127.0.0.1:5000/api/items")`` - Эта строка выполняет асинхронный запрос к указанному URL и сохраняет ответ в переменную ``response``
+- ``if (response.ok) {...}`` - проверяем что статус полченного ответа находится в диапазоне от 200 до 299 (подробнее см. HTTP status code)
+- ``const json = await response.json()`` - достаем json из ответа
+- ``const items = json.items`` - получаем массив товаров
+- ``displayItems(items)`` - вызываем функцию для отображения всех товаров на странице
+
+Теперь поговорим про ``displayItems(items)``, что же это за функция? 
+
+Мы получили массив ``items``, состоящий из словарей. Полдела сделано! Теперь эти данные нужно вывести на страницу, именно для этого мы напишем отдельную функцию. 
+
+Ниже предыдущего кода, объявим функцию ``displayItems``, которая будет принимать аргумент ``items`` - список:
+
+```javascript
+function displayItems(items) {
+  ...
+}
+```
+Карточка в которой будет отображаться товар будет иметь такую структуру:
+```html
+<li class="card__sales">
+   <div class="card__sale__amount">
+      <p class="card__sale__text">скидка 15%</p>
+   </div>
+   <img src="static/img/favorite.svg" alt="favorite" class="favorite">
+   <img src="static/img/docstation.png" alt="pink_gamepad" class="docstation">
+   <a href="#!" class="card__name">Зарядная станция Sony для PlayStation VR2 Sen...</a>
+   <div class="card__prices">
+      <p class="card__old__price">11000 ₽</p>
+      <p class="card__new__price">9350 ₽</p>
+   </div>
+</li>
+```
+Нам нужно с помощью JS создать ее.
+
+```javascript
+function displayItems(items) {
+    const three_productsContainer = document.getElementById("three-products-container");
+    const productsContainer = document.getElementById("products-container");
+    items.forEach((product, index) => {
+        console.log(index);
+        const listItem = document.createElement("li");
+        listItem.classList.add("card__sales");
+
+        // Создаем блок для цен
+        const pricesDiv = document.createElement("div");
+        pricesDiv.classList.add("card__prices");
+
+        // Создаем div для скидки
+        if (product.discount) {
+            const saleAmountDiv = document.createElement("div");
+            saleAmountDiv.classList.add("card__sale__amount");
+
+            const saleText = document.createElement("p");
+            saleText.classList.add("card__sale__text");
+            saleText.textContent = `скидка ${product.discount_value}%`;
+
+            saleAmountDiv.appendChild(saleText);
+            listItem.appendChild(saleAmountDiv);
+
+            const oldPrice = document.createElement("p");
+            oldPrice.classList.add("card__old__price");
+            oldPrice.textContent = `${product.price} ₽`;
+
+            const newPrice = document.createElement("p");
+            newPrice.classList.add("card__new__price");
+            newPrice.textContent = `${product.price * (1 - product.discount_value / 100)} ₽`;
+
+            pricesDiv.appendChild(oldPrice);
+            pricesDiv.appendChild(newPrice);
+        } else {
+            const price = document.createElement("p");
+            price.classList.add("card__new__price");
+            price.textContent = `${product.price} ₽`;
+
+            pricesDiv.appendChild(price);
+        }
+
+        // Создаем изображение для "избранного"
+        const favoriteImg = document.createElement("img");
+        favoriteImg.src = "static/img/favorite.svg";
+        favoriteImg.alt = "favorite";
+        favoriteImg.classList.add("favorite");
+
+        // Создаем изображение товара
+        // PUT YOUR CODE HERE
+        let route = product.image.split("/");
+        let class_name = ((route.at(-1)).split(".")).at(0);
+        productImg.classList.add(`${class_name}`);
+        productImg.alt = `${class_name}`;
+
+        // Создаем название товара
+        const productName = processingProductName(product.name);
+
+        // Добавляем созданные элементы в li
+        listItem.appendChild(favoriteImg);
+        listItem.appendChild(productImg);
+        listItem.appendChild(productName);
+        listItem.appendChild(pricesDiv);
+
+        // Добавляем li в контейнер товаров
+        if (index < 3){
+            three_productsContainer.appendChild(listItem);
+        } else {
+            productsContainer.appendChild(listItem);
+        }
+    });
+}
+
+function processingProductName(name) {
+    const maxChars = 45;
+    const productNameLink = document.createElement("a");
+    productNameLink.href = "#!";
+    productNameLink.classList.add("card__name");
+    productNameLink.textContent = name.length > maxChars ? name.substring(0, maxChars) + "..." : name;
+    return productNameLink;
+}
+```
+
+Ваша задача создать тег ``img`` с навзанием ``productImg`` и указать путь (``src``) до файла, для этого изучите, как создавались другие элементы в этом коде. 
+
+После создания скрипта, нам нужно подключить его к HTML. Для этого зайдем в файл ``index.html`` и в теге ``head`` добавим строчку:
+
+```html
+<script type="text/javascript" src="{{url_for('static', filename='путь/к/файлу/script.js')}}"></script>
+```
+
+Здесь мы используем конструкцию url_for из Jinja2, чтобы указать путь до файла из проекта Flask.
+
+## Финал
+
+Теперь вы можете зайти на сайт и увидеть что все товары из базы данных отображаются на странице. Если вы хотите добавить товар, то для этого вам понадобится добавить запись в таблицу и загрузить изображения товара в папку ``static/img``. Для просмотра базы данных можно использовать ``DB Browser`` или другие приложения.  
+
 ## Полезные материалы
 -	https://flask.palletsprojects.com/en/latest/
+-	https://ru.hexlet.io/courses/http-api/lessons/crud/theory_unit
 -	https://learn.javascript.ru/fetch
 -	https://learn.javascript.ru/dom-nodes
 -	https://habr.com/ru/companies/macloud/articles/557422/
