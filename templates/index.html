@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSStore</title>
+    <link rel="stylesheet" href="../static/css/reset.css">
+    <link rel="stylesheet" href="../static/css/styles.css">
+</head>
+<body>
+
+    <header class="header">
+
+        <div class="wrapper">
+
+                <nav class="header__nav">
+                    <ul class="header__list">
+                        <li class="header__item">
+                            <a href="!#" class="header__link">Акции</a>
+                        </li>
+                        <li class="header__item">
+                            <a href="!#" class="header__link">Каталог</a>
+                        </li>
+                        <li class="header__item">
+                            <a href="!#" class="header__link">Личный кабинет</a>
+                        </li>
+                        <li class="header__item">
+                            <a href="!#" class="header__link">О нас</a>
+                        </li>
+                        <li class="header__item__search">
+                            <a href="!#" class="header__link">
+                                <img src="{{url_for('static', filename='img/search.svg')}}" alt="search" class="search">
+                            </a>
+                        </li>
+                        <li class="header__item">
+                            <a href="!#" class="header__link">
+                                <img src="{{url_for('static', filename='img/cart.svg')}}" alt="cart" class="cart">
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+
+        </div>
+    </header>
+
+    <main class="main">
+
+        <section class="banner">
+            <div class="banner__wrapper">
+                <div class="banner__logo">
+                    <a href="#!" class="logo"><img src="{{url_for('static', filename='img/logo.svg')}}" alt="logo" class="banner__logo__img"></a>
+                </div>
+                <div class="banner__text">
+                    <ul>
+                        <li class="banner__text__bold">безлимитная</li>
+                        <li class="banner__text__bold">надёжная</li>
+                        <li class="banner__text__italic">игровая</li>
+                        <li class="banner__text__bold">техника</li>
+                    </ul>
+                </div>
+                <div class="banner__person">
+                    <a href="#!" class="person"><img src="{{url_for('static', filename='img/person.svg')}}" alt="person"></a>
+                </div>
+            </div>
+        </section>
+
+        <section class="info">
+            <div class="info__wrapper">
+                <p class="info__text">Подробнее о выгодных предложениях читайте на нашем официальном аккаунте @use.ludere</p>
+            </div>
+        </section>
+
+        <section class="mainpage">
+            <div class="mainpage__wrapper">
+                <div class="mainpage__text">
+                    <p class="mainpage__date">с 01.12</p>
+                    <h1>НАЙДИ СВОЮ ПОЛОВИНУ</h1>
+                    <p class="mainpage__sales">скидки до 50%</p>
+                    <p class="mainpage__assort">на все геймпады и не только</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="three__cards">
+            <div class="three__cards__wrapper" id="three-products-container">
+
+            </div>
+        </section>
+
+        <section class="sale__page">
+            <div class="sale__page__wrapper">
+                <p class="sale__page__text">СКИДКИ</p>
+                <p class="sale__page__text_upto">до 50 процентов!</p>
+                <img src="{{url_for('static', filename='img/logo.png')}}" alt="logo" class="sale__page__logo">
+            </div>
+        </section>
+
+        <section class="catalogue">
+            <div class="catalogue__wrapper">
+
+                <ul class="catalogue__list" id="products-container">
+
+                </ul>
+
+            </div>
+        </section>
+    </main>
+
+</body>
+</html>
